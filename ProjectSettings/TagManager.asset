@@ -41,7 +41,13 @@ TagManager:
   - name: Default
     uniqueID: 0
     locked: 0
+  - name: Bedrock
+    uniqueID: 4218392083
+    locked: 0
   - name: Ground
+    uniqueID: 2714796379
+    locked: 0
+  - name: Floor
     uniqueID: 3377280941
     locked: 0
   - name: Player
@@ -49,6 +55,9 @@ TagManager:
     locked: 0
   - name: Walls
     uniqueID: 1424897273
+    locked: 0
+  - name: Roof
+    uniqueID: 1555220943
     locked: 0
   m_RenderingLayers:
   - Default
