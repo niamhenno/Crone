@@ -11,17 +11,14 @@ public class NPCInteract : MonoBehaviour
 
     void OnMouseDown()
     {
-        // Check tutorial is done before allowing interaction
-        if (SuspicionManager.Instance == null) return;
-
         if (!SuspicionManager.Instance.CanTalkToNPC())
         {
-            Debug.Log("Tutorial not complete yet — can't talk to " + gameObject.name);
+            Debug.Log("Tutorial not complete yet.");
             return;
         }
 
-        // Run the Fungus block
         if (flowchart != null)
             flowchart.ExecuteBlock(blockName);
     }
 }
+    

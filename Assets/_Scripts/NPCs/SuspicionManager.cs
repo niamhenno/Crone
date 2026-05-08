@@ -1,6 +1,6 @@
-﻿using Fungus;
-using UnityEngine;
+﻿using UnityEngine;
 using UnityEngine.UI;
+using Fungus;
 
 /// <summary>
 /// SuspicionManager — attach this to a single empty GameObject in your scene.
@@ -21,7 +21,7 @@ public class SuspicionManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    //  INSPECTOR FIELDS — drag objects in here
+    //  INSPECTOR FIELDS
     // ─────────────────────────────────────────────
 
     [Header("── Fungus ──────────────────────")]
@@ -31,18 +31,19 @@ public class SuspicionManager : MonoBehaviour
     [Header("── Suspicion UI ─────────────────")]
     [Tooltip("Drag the Slider UI element here")]
     public Slider suspicionSlider;
-    [Tooltip("Drag the Fill Image of the Slider here (for colour change)")]
+    [Tooltip("Drag the Fill Image of the Slider here")]
     public Image sliderFill;
 
     [Header("── Suspicion Settings ──────────")]
-    [Tooltip("Maximum suspicion before game over")]
-    public int maxSuspicion = 10;
+    [Tooltip("Maximum suspicion before game over — set to 8")]
+    public int maxSuspicion = 8;
 
     [Header("── Game Over ───────────────────")]
     [Tooltip("Drag your GameOverScreen GameObject here")]
     public GameOverScreen gameOverScreen;
+
     // ─────────────────────────────────────────────
-    //  RUNTIME VARIABLES (shown in Inspector)
+    //  RUNTIME VARIABLES
     // ─────────────────────────────────────────────
 
     [Header("── Current Values (read-only) ──")]
@@ -55,6 +56,8 @@ public class SuspicionManager : MonoBehaviour
     [SerializeField] private bool hasCompletedTutorial = false;
     [SerializeField] private bool hasTalkedToThomas = false;
     [SerializeField] private bool hasTalkedToHale = false;
+
+    private bool gameOverTriggered = false;
 
     // ─────────────────────────────────────────────
     //  START
@@ -69,9 +72,6 @@ public class SuspicionManager : MonoBehaviour
     //  CORE: MODIFY ANY VARIABLE
     // ─────────────────────────────────────────────
 
-    /// <summary>
-    /// Internal method — modifies a named variable by amount and syncs everything.
-    /// </summary>
     private void Modify(string variable, int amount)
     {
         switch (variable)
@@ -86,6 +86,37 @@ public class SuspicionManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
+    //  GAME OVER
+    // ─────────────────────────────────────────────
+
+    private void CheckGameOver()
+    {
+        if (gameOverTriggered) return;
+
+        if (suspicion >= maxSuspicion)
+        {
+            gameOverTriggered = true;
+            Debug.Log("[SuspicionManager] Game over triggered. Final suspicion: " + suspicion);
+
+            if (gameOverScreen != null)
+                gameOverScreen.ShowBadEnding(suspicion);
+        }
+    }
+
+    public bool IsGameOver() => suspicion >= maxSuspicion;
+
+    // ─────────────────────────────────────────────
+    //  GOOD ENDING
+    // ─────────────────────────────────────────────
+
+    public void TriggerGoodEnding()
+    {
+        Debug.Log("[SuspicionManager] Good ending triggered.");
+        if (gameOverScreen != null)
+            gameOverScreen.ShowGoodEnding(suspicion);
+    }
+
+    // ─────────────────────────────────────────────
     //  SYNC TO FUNGUS + UPDATE UI
     // ─────────────────────────────────────────────
 
@@ -93,13 +124,11 @@ public class SuspicionManager : MonoBehaviour
     {
         if (flowchart != null)
         {
-            // Numeric variables
             flowchart.SetIntegerVariable("Suspicion", suspicion);
             flowchart.SetIntegerVariable("MarthaTrust", marthaTrust);
             flowchart.SetIntegerVariable("ThomasTrust", thomasTrust);
             flowchart.SetIntegerVariable("HaleTrust", haleTrust);
 
-            // Progression flags
             flowchart.SetBooleanVariable("HasCompletedTutorial", hasCompletedTutorial);
             flowchart.SetBooleanVariable("HasTalkedToThomas", hasTalkedToThomas);
             flowchart.SetBooleanVariable("HasTalkedToHale", hasTalkedToHale);
@@ -124,60 +153,18 @@ public class SuspicionManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    //  GAME OVER CHECK
-    //  Call this from Fungus "CheckSuspicion" block
-    // ─────────────────────────────────────────────
-
-    /// <summary>
-    /// Returns true if suspicion has hit max.
-    /// Fungus CheckSuspicion block should call ExecuteBlock("GameOver") if this is true.
-    /// </summary>
-    private void CheckGameOver()
-    {
-        if (gameOverTriggered) return;
-
-        if (suspicion >= maxSuspicion)
-        {
-            gameOverTriggered = true;
-            if (gameOverScreen != null)
-                gameOverScreen.Show(suspicion);
-        }
-    }
-    
-    
-
-    public bool IsGameOver()
-    {
-        return suspicion >= maxSuspicion;
-    }
-
-    // ─────────────────────────────────────────────
     //  PROGRESSION
     // ─────────────────────────────────────────────
 
-    /// <summary>
-    /// Call at the END of Martha's dialogue block.
-    /// Unlocks Thomas and Hale for free-roam interaction.
-    /// </summary>
     public void CompleteTutorial()
     {
         hasCompletedTutorial = true;
         SyncAll();
-        Debug.Log("[SuspicionManager] Tutorial complete. Thomas and Hale are now available.");
+        Debug.Log("[SuspicionManager] Tutorial complete. Thomas and Hale now available.");
     }
 
-    /// <summary>
-    /// Returns true if the player has finished Martha's tutorial scene.
-    /// Gate Thomas and Hale interactions behind this.
-    /// </summary>
-    public bool CanTalkToNPC()
-    {
-        return hasCompletedTutorial;
-    }
+    public bool CanTalkToNPC() => hasCompletedTutorial;
 
-    /// <summary>
-    /// Call at the END of Thomas's dialogue block.
-    /// </summary>
     public void SetTalkedToThomas()
     {
         hasTalkedToThomas = true;
@@ -185,9 +172,6 @@ public class SuspicionManager : MonoBehaviour
         CheckAllNPCsTalkedTo();
     }
 
-    /// <summary>
-    /// Call at the END of Hale's dialogue block.
-    /// </summary>
     public void SetTalkedToHale()
     {
         hasTalkedToHale = true;
@@ -195,24 +179,19 @@ public class SuspicionManager : MonoBehaviour
         CheckAllNPCsTalkedTo();
     }
 
-    /// <summary>
-    /// Automatically fires Day3_BranchEvent once both Thomas and Hale have been spoken to.
-    /// Called internally after each NPC conversation ends.
-    /// </summary>
-    private bool gameOverTriggered = false;
     private void CheckAllNPCsTalkedTo()
     {
         if (hasTalkedToThomas && hasTalkedToHale)
         {
-            Debug.Log("[SuspicionManager] Both NPCs talked to. Firing Day3_BranchEvent.");
+            Debug.Log("[SuspicionManager] Both NPCs done. Firing Day3_BranchEvent.");
             if (flowchart != null)
                 flowchart.ExecuteBlock("Day3_BranchEvent");
         }
     }
 
     // ─────────────────────────────────────────────
-    //  DAY 1 — MARTHA (tutorial)
-    //  Wire these to Fungus Menu options via Call Method
+    //  DAY 1 — MARTHA
+    //  Max from this scene: +4 (Help Openly)
     // ─────────────────────────────────────────────
 
     /// <summary> Option 1: "I cannot help you." </summary>
@@ -232,20 +211,20 @@ public class SuspicionManager : MonoBehaviour
     /// <summary> Option 3: "Bring him inside." </summary>
     public void Day1_HelpOpenly()
     {
-        Modify("Suspicion", +3);
+        Modify("Suspicion", +4); // raised from +3
         Modify("MarthaTrust", +3);
     }
 
     // ─────────────────────────────────────────────
-    //  DAY 2 — BAKER THOMAS (free-roam)
-    //  Wire these to Fungus Menu options via Call Method
+    //  DAY 2 — BAKER THOMAS
+    //  Max from this scene: +3 (Tell Truth)
     // ─────────────────────────────────────────────
 
     /// <summary> Option 1: "It's fungus. Some can heal... some can ruin." </summary>
     public void Day2_TellTruth()
     {
         Modify("ThomasTrust", +3);
-        Modify("Suspicion", +2);
+        Modify("Suspicion", +3); // raised from +2
     }
 
     /// <summary> Option 2: "Dry your flour. Keep your cellar aired." </summary>
@@ -263,27 +242,72 @@ public class SuspicionManager : MonoBehaviour
     }
 
     // ─────────────────────────────────────────────
-    //  DAY 3 — REVEREND HALE (free-roam)
-    //  Wire these to Fungus Menu options via Call Method
+    //  DAY 3 — REVEREND HALE
+    //  Max from this scene: +4 (Challenge)
     // ─────────────────────────────────────────────
 
     /// <summary> Option 1: "I only help where I can." </summary>
     public void Day3_StayCalm()
     {
         Modify("HaleTrust", +2);
+        // No suspicion change
     }
 
     /// <summary> Option 2: "I know nothing of herbs." </summary>
     public void Day3_Lie()
     {
         Modify("HaleTrust", -2);
-        Modify("Suspicion", +2);
+        Modify("Suspicion", +3); // raised from +2
     }
 
     /// <summary> Option 3: "Would you rather the sick be left to die?" </summary>
     public void Day3_Challenge()
     {
-        Modify("Suspicion", +3);
+        Modify("Suspicion", +4); // raised from +3
         Modify("HaleTrust", -3);
+    }
+
+    // ─────────────────────────────────────────────
+    //  SEARCH BRANCH
+    // ─────────────────────────────────────────────
+
+    /// <summary> "They are medicine, nothing more." </summary>
+    public void Search_Defend()
+    {
+        Modify("HaleTrust", +2);
+        Modify("Suspicion", -1);
+    }
+
+    /// <summary> "You have no right to be here." </summary>
+    public void Search_Challenge()
+    {
+        Modify("Suspicion", +4);
+    }
+
+    /// <summary> Stay silent </summary>
+    public void Search_Silent()
+    {
+        Modify("Suspicion", +1);
+    }
+
+    /// <summary> "Hide everything quickly." </summary>
+    public void Search_Hide()
+    {
+        Modify("Suspicion", -2);
+        Modify("MarthaTrust", +1);
+    }
+
+    /// <summary> "Stand your ground." </summary>
+    public void Search_StandGround()
+    {
+        Modify("Suspicion", +2);
+    }
+    void Update()
+    {
+        if (Input.GetKeyDown(KeyCode.T))
+        {
+            Debug.Log("TEST — adding 4 suspicion manually");
+            Modify("Suspicion", +4);
+        }
     }
 }
