@@ -244,7 +244,7 @@ public class GameOverScreen : MonoBehaviour
 
     public void Restart()
     {
-        SceneManager.LoadScene(gameSceneName);
+        SceneManager.LoadScene(0);
     }
 
     public void Quit()
