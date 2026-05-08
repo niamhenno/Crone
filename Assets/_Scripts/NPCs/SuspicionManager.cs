@@ -99,6 +99,7 @@ public class SuspicionManager : MonoBehaviour
             Debug.Log("[SuspicionManager] Game over triggered. Final suspicion: " + suspicion);
 
             if (gameOverScreen != null)
+                Debug.Log("GameOverScreen != null");
                 gameOverScreen.ShowBadEnding(suspicion);
         }
     }
